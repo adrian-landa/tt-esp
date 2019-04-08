@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang = "en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Configuraci&oacute; Inicial</title>
+        <link rel="stylesheet" type="text/css" href="config.css"/>
+        <script type="text/javascript" src="config.js"></script>
+    
+    </head>
+    <body onload="checkError()">
+        <div>
+            <form action="/config" method="post" accept-charset="ISO-8859-1">
+                <p id = "errorContainer" class="error">Ha ocurrido un error, intente de nuevo</p>
+                <p><input id = "essid" name = "fieldESSID" type="text"  placeholder="ESSID" required /></p>
+                <p><input id = "pass" name = "fieldPassword" type="password" placeholder="Password" required min="8"/></p>
+                <p><input type="submit" class="button" value="Guardar" onclick="handlerBtnSave()"/></p>
+            </form>
+        </div>
+        <div id = "loaderContainer" class = "loader"></div>
+    </body>
+</html>
