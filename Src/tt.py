@@ -1,6 +1,9 @@
+import os
 import network
 import time
 from microWebSrv import MicroWebSrv
+import constants
+import json
 
 
 def configure_access_point():
@@ -34,7 +37,8 @@ def get_networks_names():
     sta.active(False)
     result = ""
     for net in networks:
-        result = result + 'ssid:{0} level:{1}\n'.format(net[0].decode('ascii'), net[3])
+        result = result + \
+            'ssid:{0} level:{1}\n'.format(net[0].decode('ascii'), net[3])
     return result
 
 
@@ -57,6 +61,13 @@ def handler_config_post(client, response):
     password = form['fieldPassword']
     is_correct = configure_station_point(essid, password)
     if is_correct:
+        if os.path.exists(constants.SETTINGS_FILE):
+            settings = build_setings(constants.SETTINGS_FILE)
+            write_settings(
+                file_name=constants.SETTINGS_FILE,
+                essid=essid,
+                password=password,
+                content=settings[constants.JSON_LABEL_CONTENT])
         file = open('www/done.html', 'r')
         content = file.read()
         file.close()
@@ -68,7 +79,37 @@ def handler_config_post(client, response):
         response.WriteResponseRedirect('/config/error')
 
 
+def write_settings(file_name, essid='', password='', content=''):
+    settings = {
+        "essid": essid,
+        "password": password,
+        "content": content,
+        "auto_start": False
+    }
+    settings_file = open(file_name, 'w')
+    json.dumps(settings, settings_file)
+    settings_file.close()
+
+
+def build_setings(file_name):
+    settings_file = open(file_name, 'w')
+    settings = json.load(settings_file)
+    settings_file.close()
+    return settings
+
+
 if __name__ == "__main__":
+    if not os.path.exists(constants.SETTINGS_FILE):
+        write_settings(constants.SETTINGS_FILE)
+    else:
+        settings = build_setings(constants.SETTINGS_FILE)
+        is_connected = configure_station_point(
+            essid=settings[constants.JSON_LABEL_ESSID],
+            password=settings[constants.JSON_LABEL_PASS])
+        if is_connected:
+            pass
+
     configure_access_point()
     uServer = MicroWebSrv(port=80, bindIP='0.0.0.0', webPath="/www/")
     uServer.Start(threaded=True)
+{ñpoiyu8}

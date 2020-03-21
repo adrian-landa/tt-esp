@@ -1,15 +1,21 @@
 from umqtt.simple import MQTTClient
+import gc
 import ubinascii
+gc.collect()
 import machine
+gc.collect()
 import network
 import time
 import usocket as socket
 import os
 import sdcard
+import json
 
-MQTT_SERVER = "192.168.100.98"
-CLIENT_ID = ubinascii.hexlify(machine.unique_id())
-TOPIC = b"content"
+MQTT_SERVER = 'a1rg8ma55rz9fs-ats.iot.us-west-2.amazonaws.com'
+MQTT_PORT = 8883
+MQTT_CLIENT_ID = ubinascii.hexlify(machine.unique_id())
+TOPIC = b"config"
+client = None
 SD_PREFIX = '/sd'
 
 
@@ -27,6 +33,22 @@ def configure_station_point(essid, password):
         tries += 1
         time.sleep(1)
     return sta.isconnected()
+
+def configure_mqtt_client():
+    global client
+    certFile = open("/cert", "r")
+    cert = certFile.read()
+    certFile.close()
+    keyFile = open("/privateKey", "r")
+    key = keyFile.read()
+    keyFile.close()
+    client = MQTTClient(client_id=MQTT_CLIENT_ID, server=MQTT_SERVER,
+                        port=MQTT_PORT, keepalive=5000, ssl=True,
+                        ssl_params={"cert": cert, "key": key, "server_side": False})       
+    client.set_callback(subscription_callback)
+    client.connect()
+    client.subscribe(TOPIC)
+    print('Subscrito')
 
 
 def mount_sd(prefix):
@@ -74,17 +96,19 @@ def download_file(host, path, port):
 
 def subscription_callback(topic, msg):
     print((topic, msg))
-    path = msg.decode('ascii')
-    download_file('192.168.100.98', path, 8000)
+    payload = json.loads(msg)
+    path = payload['file']
+    download_file('192.168.100.124', path, 8000)
 
 
-configure_station_point('Totalplay-CD9A', 'CD9A427F7Gs6675y')
-client = MQTTClient(CLIENT_ID, MQTT_SERVER)
-client.set_callback(subscription_callback)
-client.connect()
-client.subscribe(TOPIC)
+configure_station_point('Totalplay-CD9A', '864LUP99r')
+time.sleep(1)
+configure_mqtt_client()
+time.sleep(1)
+
 try:
     while True:
-        client.wait_msg()
+        client.check_msg()
+        time.sleep(0.3)
 finally:
     client.disconnect()
