@@ -22,21 +22,16 @@ class APA102:
         level = self.__compute_level(self.level)
         self.__preamble()
         for led in strip:
-            self.spi.write(level)
-            self.spi.write(led[0])
-            self.spi.write(led[1])
-            self.spi.write(led[2])
+            buffer = bytearray([level,led[0],led[1],led[2]])
+            self.spi.write(buffer)
         self.__afterword()
 
     def clear(self):
         self.__preamble()
         level = self.__compute_level(0)
-        blank = b'\x00'
+        blank = 0
         for _ in range(self.strip_length):
-            self.spi.write(level)
-            self.spi.write(blank)
-            self.spi.write(blank)
-            self.spi.write(blank)
+            self.spi.write(bytearray([level,blank,blank,blank]))
         self.__afterword()
 
     def __preamble(self):
@@ -50,5 +45,5 @@ class APA102:
     def __compute_level(self, level):
         header = b'\xE0'
         scaled = bytes([int(level * 31/100)])
-        result = bytes([header[0] | scaled[0]])
+        result = header[0] | scaled[0]
         return result
